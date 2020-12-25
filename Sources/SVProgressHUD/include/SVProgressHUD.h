@@ -59,6 +59,9 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 @property (strong, nonatomic, nonnull) UIColor *backgroundLayerColor UI_APPEARANCE_SELECTOR;    // default is [UIColor colorWithWhite:0 alpha:0.4]
 @property (assign, nonatomic) CGSize imageViewSize UI_APPEARANCE_SELECTOR;                      // default is 28x28 pt
 @property (assign, nonatomic) BOOL shouldTintImages UI_APPEARANCE_SELECTOR;                     // default is YES
+@property (strong, nonatomic, nonnull) UIImage *infoImage UI_APPEARANCE_SELECTOR;               // default is the bundled info image provided by Freepik
+@property (strong, nonatomic, nonnull) UIImage *successImage UI_APPEARANCE_SELECTOR;            // default is the bundled success image provided by Freepik
+@property (strong, nonatomic, nonnull) UIImage *errorImage UI_APPEARANCE_SELECTOR;              // default is the bundled error image provided by Freepik
 @property (strong, nonatomic, nonnull) UIView *viewForExtension UI_APPEARANCE_SELECTOR;         // default is nil, only used if #define SV_APP_EXTENSIONS is set
 @property (assign, nonatomic) NSTimeInterval graceTimeInterval;                                 // default is 0 seconds
 @property (assign, nonatomic) NSTimeInterval minimumDismissTimeInterval;                        // default is 5.0 seconds
@@ -71,9 +74,8 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 
 @property (assign, nonatomic) UIWindowLevel maxSupportedWindowLevel; // default is UIWindowLevelNormal
 
-@property (assign, nonatomic) BOOL isFlawlessStackingEnabled;   // default is NO
-@property (assign, nonatomic) BOOL hapticsEnabled;              // default is NO
-@property (assign, nonatomic) BOOL motionEffectEnabled;         // default is YES
+@property (assign, nonatomic) BOOL hapticsEnabled;      // default is NO
+@property (assign, nonatomic) BOOL motionEffectEnabled; // default is YES
 
 + (void)setDefaultStyle:(SVProgressHUDStyle)style;                      // default is SVProgressHUDStyleLight
 + (void)setDefaultMaskType:(SVProgressHUDMaskType)maskType;             // default is SVProgressHUDMaskTypeNone
@@ -94,6 +96,9 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setBackgroundLayerColor:(nonnull UIColor*)color;                // default is [UIColor colorWithWhite:0 alpha:0.5], only used for SVProgressHUDMaskTypeCustom
 + (void)setImageViewSize:(CGSize)size;                                  // default is 28x28 pt
 + (void)setShouldTintImages:(BOOL)shouldTintImages;                     // default is YES
++ (void)setInfoImage:(nonnull UIImage*)image;                           // default is the bundled info image provided by Freepik
++ (void)setSuccessImage:(nonnull UIImage*)image;                        // default is the bundled success image provided by Freepik
++ (void)setErrorImage:(nonnull UIImage*)image;                          // default is the bundled error image provided by Freepik
 + (void)setViewForExtension:(nonnull UIView*)view;                      // default is nil, only used if #define SV_APP_EXTENSIONS is set
 + (void)setGraceTimeInterval:(NSTimeInterval)interval;                  // default is 0 seconds
 + (void)setMinimumDismissTimeInterval:(NSTimeInterval)interval;         // default is 5.0 seconds
@@ -101,7 +106,6 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)setFadeInAnimationDuration:(NSTimeInterval)duration;            // default is 0.15 seconds
 + (void)setFadeOutAnimationDuration:(NSTimeInterval)duration;           // default is 0.15 seconds
 + (void)setMaxSupportedWindowLevel:(UIWindowLevel)windowLevel;          // default is UIWindowLevelNormal
-+ (void)setFlawlessStackingEnabled:(BOOL)isFlawlessStackingEnabled;     // default is NO
 + (void)setHapticsEnabled:(BOOL)hapticsEnabled;						    // default is NO
 + (void)setMotionEffectEnabled:(BOOL)motionEffectEnabled;               // default is YES
 
@@ -118,6 +122,14 @@ typedef void (^SVProgressHUDDismissCompletion)(void);
 + (void)showProgress:(float)progress status:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showProgress:status: and setDefaultMaskType: instead.")));
 
 + (void)setStatus:(nullable NSString*)status; // change the HUD loading status while it's showing
+
+// stops the activity indicator, shows a glyph + status, and dismisses the HUD a little bit later
++ (void)showInfoWithStatus:(nullable NSString*)status;
++ (void)showInfoWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showInfoWithStatus: and setDefaultMaskType: instead.")));
++ (void)showSuccessWithStatus:(nullable NSString*)status;
++ (void)showSuccessWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showSuccessWithStatus: and setDefaultMaskType: instead.")));
++ (void)showErrorWithStatus:(nullable NSString*)status;
++ (void)showErrorWithStatus:(nullable NSString*)status maskType:(SVProgressHUDMaskType)maskType __attribute__((deprecated("Use showErrorWithStatus: and setDefaultMaskType: instead.")));
 
 // shows a image + status, use white PNGs with the imageViewSize (default is 28x28 pt)
 + (void)showImage:(nonnull UIImage*)image status:(nullable NSString*)status;

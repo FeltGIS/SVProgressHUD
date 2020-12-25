@@ -163,6 +163,18 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [self sharedView].shouldTintImages = shouldTintImages;
 }
 
++ (void)setInfoImage:(UIImage*)image {
+    [self sharedView].infoImage = image;
+}
+
++ (void)setSuccessImage:(UIImage*)image {
+    [self sharedView].successImage = image;
+}
+
++ (void)setErrorImage:(UIImage*)image {
+    [self sharedView].errorImage = image;
+}
+
 + (void)setViewForExtension:(UIView*)view {
     [self sharedView].viewForExtension = view;
 }
@@ -189,10 +201,6 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 + (void)setMaxSupportedWindowLevel:(UIWindowLevel)windowLevel {
     [self sharedView].maxSupportedWindowLevel = windowLevel;
-}
-
-+ (void)setFlawlessStackingEnabled:(BOOL)isFlawlessStackingEnabled {
-    [self sharedView].isFlawlessStackingEnabled = isFlawlessStackingEnabled;
 }
 
 + (void)setHapticsEnabled:(BOOL)hapticsEnabled {
@@ -251,6 +259,79 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 
 #pragma mark - Show, then automatically dismiss methods
+
++ (void)showInfoWithStatus:(NSString*)status {
+    [self showImage:[self sharedView].infoImage status:status];
+    
+#if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (@available(iOS 10.0, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self sharedView].hapticGenerator notificationOccurred:UINotificationFeedbackTypeWarning];
+        });
+    }
+#endif
+}
+
++ (void)showInfoWithStatus:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
+    SVProgressHUDMaskType existingMaskType = [self sharedView].defaultMaskType;
+    [self setDefaultMaskType:maskType];
+    [self showInfoWithStatus:status];
+    [self setDefaultMaskType:existingMaskType];
+}
+
++ (void)showSuccessWithStatus:(NSString*)status {
+    [self showImage:[self sharedView].successImage status:status];
+
+#if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (@available(iOS 10, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self sharedView].hapticGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
+        });
+    }
+#endif
+}
+
++ (void)showSuccessWithStatus:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
+    SVProgressHUDMaskType existingMaskType = [self sharedView].defaultMaskType;
+    [self setDefaultMaskType:maskType];
+    [self showSuccessWithStatus:status];
+    [self setDefaultMaskType:existingMaskType];
+    
+#if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (@available(iOS 10.0, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self sharedView].hapticGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
+        });
+    }
+#endif
+}
+
++ (void)showErrorWithStatus:(NSString*)status {
+    [self showImage:[self sharedView].errorImage status:status];
+    
+#if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (@available(iOS 10.0, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self sharedView].hapticGenerator notificationOccurred:UINotificationFeedbackTypeError];
+        });
+    }
+#endif
+}
+
++ (void)showErrorWithStatus:(NSString*)status maskType:(SVProgressHUDMaskType)maskType {
+    SVProgressHUDMaskType existingMaskType = [self sharedView].defaultMaskType;
+    [self setDefaultMaskType:maskType];
+    [self showErrorWithStatus:status];
+    [self setDefaultMaskType:existingMaskType];
+    
+#if TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (@available(iOS 10.0, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self sharedView].hapticGenerator notificationOccurred:UINotificationFeedbackTypeError];
+        });
+    }
+#endif
+}
 
 + (void)showImage:(UIImage*)image status:(NSString*)status {
     NSTimeInterval displayInterval = [self displayDurationForString:status];
@@ -333,6 +414,14 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         
         _imageViewSize = CGSizeMake(28.0f, 28.0f);
         _shouldTintImages = YES;
+        
+        NSBundle *bundle = [NSBundle bundleForClass:[SVProgressHUD class]];
+        NSURL *url = [bundle URLForResource:@"SVProgressHUD" withExtension:@"bundle"];
+        NSBundle *imageBundle = [NSBundle bundleWithURL:url];
+        
+        _infoImage = [UIImage imageWithContentsOfFile:[imageBundle pathForResource:@"info" ofType:@"png"]];
+        _successImage = [UIImage imageWithContentsOfFile:[imageBundle pathForResource:@"success" ofType:@"png"]];
+        _errorImage = [UIImage imageWithContentsOfFile:[imageBundle pathForResource:@"error" ofType:@"png"]];
 
         _ringThickness = 2.0f;
         _ringRadius = 18.0f;
@@ -349,7 +438,6 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
         
         _maxSupportedWindowLevel = UIWindowLevelNormal;
         
-        _isFlawlessStackingEnabled = NO;
         _hapticsEnabled = NO;
         _motionEffectEnabled = YES;
         
@@ -677,13 +765,6 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         __strong SVProgressHUD *strongSelf = weakSelf;
         if(strongSelf){
-            
-            // If Flawless Stacking is enabled then don't create a new view and just continue showing the old one.
-            if(strongSelf.isFlawlessStackingEnabled == YES && strongSelf.activityCount > 0)  {
-                strongSelf.activityCount++;
-                return;
-            }
-            
             if(strongSelf.fadeOutTimer) {
                 strongSelf.activityCount = 0;
             }
@@ -833,8 +914,8 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
                                                             object:self
                                                           userInfo:[self notificationUserInfo]];
         
-        // Shrink HUD to to make a nice appear / pop up animation
-        self.hudView.transform = self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1/1.5f, 1/1.5f);
+        // Zoom HUD a little to to make a nice appear / pop up animation
+        self.hudView.transform = self.hudView.transform = CGAffineTransformScale(self.hudView.transform, 1.3f, 1.3f);
         
         __block void (^animationsBlock)(void) = ^{
             // Zoom HUD a little to make a nice appear / pop up animation
@@ -1424,6 +1505,18 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 
 - (void)setShouldTintImages:(BOOL)shouldTintImages {
     if (!_isInitializing) _shouldTintImages = shouldTintImages;
+}
+
+- (void)setInfoImage:(UIImage*)image {
+    if (!_isInitializing) _infoImage = image;
+}
+
+- (void)setSuccessImage:(UIImage*)image {
+    if (!_isInitializing) _successImage = image;
+}
+
+- (void)setErrorImage:(UIImage*)image {
+    if (!_isInitializing) _errorImage = image;
 }
 
 - (void)setViewForExtension:(UIView*)view {
